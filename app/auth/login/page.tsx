@@ -27,16 +27,19 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
+
       if (error) throw error
 
-      window.location.href = "/dashboard"
+      if (data.user) {
+        // Force a hard redirect to ensure session is properly established
+        window.location.href = "/dashboard"
+      }
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred")
-    } finally {
       setIsLoading(false)
     }
   }
