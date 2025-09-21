@@ -8,9 +8,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ThemeToggle } from "@/components/theme-toggle"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 
 const packages = [
@@ -27,12 +28,19 @@ export default function SignupPage() {
     fullName: "",
     phone: "",
     packageType: "",
+    referralCode: "",
   })
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
-  const referralCode = searchParams.get("ref")
+  const urlReferralCode = searchParams.get("ref")
+
+  useEffect(() => {
+    if (urlReferralCode) {
+      setFormData((prev) => ({ ...prev, referralCode: urlReferralCode }))
+    }
+  }, [urlReferralCode])
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -46,12 +54,6 @@ export default function SignupPage() {
       return
     }
 
-    if (!formData.packageType) {
-      setError("Please select a package")
-      setIsLoading(false)
-      return
-    }
-
     try {
       const { error } = await supabase.auth.signUp({
         email: formData.email,
@@ -61,8 +63,8 @@ export default function SignupPage() {
           data: {
             full_name: formData.fullName,
             phone: formData.phone,
-            package_type: formData.packageType,
-            referral_code: referralCode,
+            package_type: formData.packageType || null,
+            referral_code: formData.referralCode || null,
           },
         },
       })
@@ -79,6 +81,10 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-card to-muted p-4">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -95,7 +101,9 @@ export default function SignupPage() {
             <CardDescription className="text-muted-foreground">
               Start your learning and earning journey today
             </CardDescription>
-            {referralCode && <div className="text-sm text-primary font-medium">Referred by: {referralCode}</div>}
+            {formData.referralCode && (
+              <div className="text-sm text-primary font-medium">Referred by: {formData.referralCode}</div>
+            )}
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSignUp} className="space-y-4">
@@ -162,18 +170,37 @@ export default function SignupPage() {
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.55, duration: 0.3 }}
+                className="space-y-2"
+              >
+                <Label htmlFor="referralCode" className="text-sm font-medium">
+                  Referral Code (Optional)
+                </Label>
+                <Input
+                  id="referralCode"
+                  type="text"
+                  placeholder="Enter referral code"
+                  value={formData.referralCode}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, referralCode: e.target.value }))}
+                  className="h-11 border-border/50 focus:border-primary transition-colors"
+                />
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.6, duration: 0.3 }}
                 className="space-y-2"
               >
                 <Label htmlFor="package" className="text-sm font-medium">
-                  Select Package
+                  Select Package (Optional)
                 </Label>
                 <Select
                   value={formData.packageType}
                   onValueChange={(value) => setFormData((prev) => ({ ...prev, packageType: value }))}
                 >
                   <SelectTrigger className="h-11 border-border/50 focus:border-primary">
-                    <SelectValue placeholder="Choose your package" />
+                    <SelectValue placeholder="Choose your package (can be selected later)" />
                   </SelectTrigger>
                   <SelectContent>
                     {packages.map((pkg) => (
@@ -189,6 +216,9 @@ export default function SignupPage() {
                 {selectedPackage && (
                   <div className="text-sm text-muted-foreground">Package Price: ₹{selectedPackage.price}</div>
                 )}
+                <div className="text-xs text-muted-foreground">
+                  You can select or change your package later from your dashboard
+                </div>
               </motion.div>
 
               <div className="grid grid-cols-2 gap-3">
