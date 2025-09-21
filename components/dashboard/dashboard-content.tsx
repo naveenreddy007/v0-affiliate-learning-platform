@@ -8,7 +8,21 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { BookOpen, TrendingUp, Users, Wallet, Play, Award, Copy, IndianRupee, Target } from "lucide-react"
+import {
+  BookOpen,
+  TrendingUp,
+  Users,
+  Wallet,
+  Play,
+  Award,
+  Copy,
+  IndianRupee,
+  Target,
+  Calendar,
+  Trophy,
+  BookMarked,
+  TrendingDown,
+} from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { toast } from "@/hooks/use-toast"
@@ -19,9 +33,21 @@ interface DashboardContentProps {
   enrollments: any[]
   commissions: any[]
   transactions: any[]
+  blogPosts: any[]
+  topEarners: any[]
+  monthlyCommissions: any[]
 }
 
-export function DashboardContent({ user, profile, enrollments, commissions, transactions }: DashboardContentProps) {
+export function DashboardContent({
+  user,
+  profile,
+  enrollments,
+  commissions,
+  transactions,
+  blogPosts,
+  topEarners,
+  monthlyCommissions,
+}: DashboardContentProps) {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
   const supabase = createClient()
@@ -48,6 +74,13 @@ export function DashboardContent({ user, profile, enrollments, commissions, tran
   const completedCourses = enrollments.filter((e) => e.progress === 100).length
   const averageProgress =
     enrollments.length > 0 ? enrollments.reduce((sum, e) => sum + e.progress, 0) / enrollments.length : 0
+
+  const monthlyEarnings = monthlyCommissions.reduce(
+    (sum, commission) => sum + Number.parseFloat(commission.amount || 0),
+    0,
+  )
+
+  const userRank = topEarners.findIndex((earner) => earner.id === user.id) + 1
 
   return (
     <div className="min-h-screen bg-background">
@@ -77,10 +110,16 @@ export function DashboardContent({ user, profile, enrollments, commissions, tran
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Welcome back, {profile?.full_name || user.email}!</h1>
           <p className="text-muted-foreground">Track your progress, manage your courses, and monitor your earnings.</p>
+          {userRank > 0 && (
+            <div className="flex items-center gap-2 mt-2">
+              <Trophy className="w-4 h-4 text-yellow-500" />
+              <span className="text-sm font-medium">You're ranked #{userRank} among top earners!</span>
+            </div>
+          )}
         </motion.div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
             <Card className="hover:shadow-lg transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -90,6 +129,19 @@ export function DashboardContent({ user, profile, enrollments, commissions, tran
               <CardContent>
                 <div className="text-2xl font-bold text-primary">₹{totalEarnings.toLocaleString()}</div>
                 <p className="text-xs text-muted-foreground">+₹{pendingEarnings.toLocaleString()} pending</p>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">This Month</CardTitle>
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">₹{monthlyEarnings.toLocaleString()}</div>
+                <p className="text-xs text-muted-foreground">{monthlyCommissions.length} transactions</p>
               </CardContent>
             </Card>
           </motion.div>
@@ -138,10 +190,12 @@ export function DashboardContent({ user, profile, enrollments, commissions, tran
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="courses" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="courses">My Courses</TabsTrigger>
             <TabsTrigger value="earnings">Earnings</TabsTrigger>
             <TabsTrigger value="referrals">Referrals</TabsTrigger>
+            <TabsTrigger value="blog">Blog</TabsTrigger>
+            <TabsTrigger value="leaderboard">Top Earners</TabsTrigger>
             <TabsTrigger value="profile">Profile</TabsTrigger>
           </TabsList>
 
@@ -194,9 +248,9 @@ export function DashboardContent({ user, profile, enrollments, commissions, tran
             </Card>
           </TabsContent>
 
-          {/* Earnings Tab */}
+          {/* Enhanced Earnings Tab */}
           <TabsContent value="earnings" className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-3 gap-6">
               <Card>
                 <CardHeader>
                   <CardTitle>Commission Summary</CardTitle>
@@ -206,6 +260,10 @@ export function DashboardContent({ user, profile, enrollments, commissions, tran
                   <div className="flex justify-between items-center">
                     <span className="text-sm">Total Earned</span>
                     <span className="font-semibold text-primary">₹{totalEarnings.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">This Month</span>
+                    <span className="font-semibold text-green-600">₹{monthlyEarnings.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm">Pending</span>
@@ -220,47 +278,109 @@ export function DashboardContent({ user, profile, enrollments, commissions, tran
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="md:col-span-2">
                 <CardHeader>
-                  <CardTitle>Recent Transactions</CardTitle>
-                  <CardDescription>Your latest earning activities</CardDescription>
+                  <CardTitle>Earnings Breakdown</CardTitle>
+                  <CardDescription>Commission types and performance</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {transactions.length > 0 ? (
-                    <div className="space-y-3">
-                      {transactions.slice(0, 5).map((transaction, index) => (
-                        <div key={transaction.id} className="flex justify-between items-center">
+                  <div className="space-y-4">
+                    {commissions.slice(0, 8).map((commission, index) => (
+                      <div key={commission.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-3 h-3 rounded-full ${
+                              commission.status === "completed"
+                                ? "bg-green-500"
+                                : commission.status === "pending"
+                                  ? "bg-yellow-500"
+                                  : "bg-red-500"
+                            }`}
+                          />
+                          <div>
+                            <p className="text-sm font-medium capitalize">
+                              {commission.commission_type?.replace("_", " ")}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(commission.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-semibold text-green-600">
+                            +₹{Number.parseFloat(commission.amount).toLocaleString()}
+                          </p>
+                          <Badge
+                            variant={commission.status === "completed" ? "default" : "secondary"}
+                            className="text-xs"
+                          >
+                            {commission.status}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Recent Transactions */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Transactions</CardTitle>
+                <CardDescription>Your latest earning activities</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {transactions.length > 0 ? (
+                  <div className="space-y-3">
+                    {transactions.map((transaction, index) => (
+                      <div key={transaction.id} className="flex justify-between items-center p-3 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                              transaction.type === "withdrawal"
+                                ? "bg-red-100 text-red-600"
+                                : "bg-green-100 text-green-600"
+                            }`}
+                          >
+                            {transaction.type === "withdrawal" ? (
+                              <TrendingDown className="w-4 h-4" />
+                            ) : (
+                              <TrendingUp className="w-4 h-4" />
+                            )}
+                          </div>
                           <div>
                             <p className="text-sm font-medium capitalize">{transaction.type.replace("_", " ")}</p>
+                            <p className="text-xs text-muted-foreground">{transaction.description}</p>
                             <p className="text-xs text-muted-foreground">
                               {new Date(transaction.created_at).toLocaleDateString()}
                             </p>
                           </div>
-                          <div className="text-right">
-                            <p
-                              className={`text-sm font-semibold ${
-                                transaction.type === "withdrawal" ? "text-red-600" : "text-green-600"
-                              }`}
-                            >
-                              {transaction.type === "withdrawal" ? "-" : "+"}₹
-                              {Number.parseFloat(transaction.amount).toLocaleString()}
-                            </p>
-                            <Badge
-                              variant={transaction.status === "completed" ? "default" : "secondary"}
-                              className="text-xs"
-                            >
-                              {transaction.status}
-                            </Badge>
-                          </div>
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground text-center py-4">No transactions yet</p>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+                        <div className="text-right">
+                          <p
+                            className={`text-sm font-semibold ${
+                              transaction.type === "withdrawal" ? "text-red-600" : "text-green-600"
+                            }`}
+                          >
+                            {transaction.type === "withdrawal" ? "-" : "+"}₹
+                            {Number.parseFloat(transaction.amount).toLocaleString()}
+                          </p>
+                          <Badge
+                            variant={transaction.status === "completed" ? "default" : "secondary"}
+                            className="text-xs"
+                          >
+                            {transaction.status}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">No transactions yet</p>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Referrals Tab */}
@@ -300,6 +420,117 @@ export function DashboardContent({ user, profile, enrollments, commissions, tran
                     <p className="text-2xl font-bold">₹0</p>
                     <p className="text-sm text-muted-foreground">Referral Earnings</p>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="blog" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Latest Blog Posts</CardTitle>
+                <CardDescription>Stay updated with the latest insights and tips</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {blogPosts.length > 0 ? (
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {blogPosts.map((post, index) => (
+                      <motion.div
+                        key={post.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                      >
+                        {post.featured_image && (
+                          <div className="aspect-video bg-muted">
+                            <img
+                              src={post.featured_image || "/placeholder.svg"}
+                              alt={post.title}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
+                        <div className="p-4">
+                          <h3 className="font-semibold mb-2 line-clamp-2">{post.title}</h3>
+                          <p className="text-sm text-muted-foreground mb-3 line-clamp-3">{post.excerpt}</p>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(post.created_at).toLocaleDateString()}
+                            </span>
+                            <Button size="sm" variant="outline">
+                              Read More
+                            </Button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <BookMarked className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No blog posts yet</h3>
+                    <p className="text-muted-foreground">Check back later for the latest updates and insights</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="leaderboard" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Top Earners Leaderboard</CardTitle>
+                <CardDescription>See how you rank among our top performers</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {topEarners.map((earner, index) => (
+                    <motion.div
+                      key={earner.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className={`flex items-center justify-between p-4 border rounded-lg ${
+                        earner.id === user.id ? "bg-primary/5 border-primary/20" : "hover:bg-muted/50"
+                      } transition-colors`}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div
+                          className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                            index === 0
+                              ? "bg-yellow-500 text-white"
+                              : index === 1
+                                ? "bg-gray-400 text-white"
+                                : index === 2
+                                  ? "bg-amber-600 text-white"
+                                  : "bg-muted text-muted-foreground"
+                          }`}
+                        >
+                          {index + 1}
+                        </div>
+                        <Avatar className="w-10 h-10">
+                          <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${earner.full_name}`} />
+                          <AvatarFallback>{earner.full_name?.charAt(0) || "?"}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-semibold">{earner.full_name || "Anonymous"}</p>
+                          <Badge variant="outline" className="text-xs capitalize">
+                            {earner.package_type || "Basic"}
+                          </Badge>
+                        </div>
+                        {earner.id === user.id && (
+                          <Badge variant="default" className="text-xs">
+                            You
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-primary">₹{(earner.total_earnings || 0).toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground">Total Earnings</p>
+                      </div>
+                    </motion.div>
+                  ))}
                 </div>
               </CardContent>
             </Card>

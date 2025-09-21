@@ -1,9 +1,39 @@
+import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
 export async function updateSession(request: NextRequest) {
-  const publicRoutes = ["/", "/auth/login", "/auth/signup", "/auth/error", "/auth/verify-email"]
-  const isPublicRoute = publicRoutes.some((route) => request.nextUrl.pathname.startsWith(route))
+  let supabaseResponse = NextResponse.next({
+    request,
+  })
 
-  // Allow all routes to pass through - auth will be handled client-side
-  return NextResponse.next()
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          supabaseResponse = NextResponse.next({
+            request,
+          })
+          cookiesToSet.forEach(({ name, value, options }) => supabaseResponse.cookies.set(name, value, options))
+        },
+      },
+    },
+  )
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  console.log("[v0] Middleware: User check", {
+    hasUser: !!user,
+    userId: user?.id,
+    path: request.nextUrl.pathname,
+  })
+
+  return supabaseResponse
 }
