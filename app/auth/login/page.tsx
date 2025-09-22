@@ -20,20 +20,54 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
+  const isValidEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email)
+  }
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    const supabase = createClient()
     setIsLoading(true)
     setError(null)
+
+    if (!email.trim()) {
+      setError("Please enter your email address")
+      setIsLoading(false)
+      return
+    }
+
+    if (!isValidEmail(email)) {
+      setError("Please enter a valid email address")
+      setIsLoading(false)
+      return
+    }
+
+    if (!password.trim()) {
+      setError("Please enter your password")
+      setIsLoading(false)
+      return
+    }
+
+    const supabase = createClient()
 
     try {
       console.log("[v0] Starting login process")
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password,
       })
 
-      if (error) throw error
+      if (error) {
+        if (error.message.includes("Invalid login credentials")) {
+          setError("Invalid email or password. Please check your credentials and try again.")
+        } else if (error.message.includes("Email not confirmed")) {
+          setError("Please check your email and click the confirmation link before signing in.")
+        } else {
+          setError(error.message)
+        }
+        setIsLoading(false)
+        return
+      }
 
       if (data.user) {
         console.log("[v0] User authenticated successfully:", data.user.id)
@@ -46,7 +80,7 @@ export default function LoginPage() {
       }
     } catch (error: unknown) {
       console.log("[v0] Login error:", error)
-      setError(error instanceof Error ? error.message : "An error occurred")
+      setError(error instanceof Error ? error.message : "An error occurred during sign in")
       setIsLoading(false)
     }
   }
@@ -89,7 +123,6 @@ export default function LoginPage() {
                   id="email"
                   type="email"
                   placeholder="Enter your email"
-                  required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="h-12 border-border/50 focus:border-primary transition-colors"
@@ -109,7 +142,6 @@ export default function LoginPage() {
                   id="password"
                   type="password"
                   placeholder="Enter your password"
-                  required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="h-12 border-border/50 focus:border-primary transition-colors"
