@@ -57,10 +57,11 @@ export default async function DashboardPage() {
     .order("created_at", { ascending: false })
     .limit(6)
 
-  // Fetch top earners
+  // Fetch top earners with real data
   const { data: topEarners } = await supabase
     .from("profiles")
     .select("id, full_name, total_earnings, package_type")
+    .not("total_earnings", "is", null)
     .order("total_earnings", { ascending: false })
     .limit(10)
 
@@ -73,6 +74,21 @@ export default async function DashboardPage() {
     .gte("created_at", `${currentMonth}-01`)
     .lt("created_at", `${new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString()}`)
 
+  // Fetch referral data
+  const { data: directReferrals } = await supabase
+    .from("profiles")
+    .select("id, full_name, created_at, package_type")
+    .eq("referred_by", data.user.id)
+
+  // Calculate referral earnings
+  const { data: referralCommissions } = await supabase
+    .from("commissions")
+    .select("amount")
+    .eq("to_user_id", data.user.id)
+    .in("commission_type", ["direct_referral", "indirect_referral"])
+
+  const referralEarnings = referralCommissions?.reduce((sum, comm) => sum + Number.parseFloat(comm.amount || 0), 0) || 0
+
   return (
     <DashboardContent
       user={data.user}
@@ -83,6 +99,8 @@ export default async function DashboardPage() {
       blogPosts={blogPosts || []}
       topEarners={topEarners || []}
       monthlyCommissions={monthlyCommissions || []}
+      directReferrals={directReferrals || []}
+      referralEarnings={referralEarnings}
     />
   )
 }

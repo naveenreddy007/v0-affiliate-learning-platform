@@ -25,6 +25,7 @@ export async function updateSession(request: NextRequest) {
     },
   )
 
+  // IMPORTANT: Do not run code between createServerClient and supabase.auth.getUser()
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -35,5 +36,6 @@ export async function updateSession(request: NextRequest) {
     path: request.nextUrl.pathname,
   })
 
+  // IMPORTANT: You *must* return the supabaseResponse object as it is
   return supabaseResponse
 }

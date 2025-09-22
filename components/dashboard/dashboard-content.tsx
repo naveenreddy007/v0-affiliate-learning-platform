@@ -36,6 +36,8 @@ interface DashboardContentProps {
   blogPosts: any[]
   topEarners: any[]
   monthlyCommissions: any[]
+  directReferrals: any[]
+  referralEarnings: number
 }
 
 export function DashboardContent({
@@ -47,6 +49,8 @@ export function DashboardContent({
   blogPosts,
   topEarners,
   monthlyCommissions,
+  directReferrals,
+  referralEarnings,
 }: DashboardContentProps) {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
@@ -59,11 +63,19 @@ export function DashboardContent({
   }
 
   const copyReferralLink = () => {
-    const referralLink = `${window.location.origin}/auth/signup?ref=${profile?.referral_code}`
+    const referralLink = `${window.location.origin}/auth/register?ref=${profile?.referral_code}`
     navigator.clipboard.writeText(referralLink)
     toast({
       title: "Referral link copied!",
       description: "Share this link to earn commissions",
+    })
+  }
+
+  const copyReferralCode = () => {
+    navigator.clipboard.writeText(profile?.referral_code || "")
+    toast({
+      title: "Referral code copied!",
+      description: "Share this code to earn commissions",
     })
   }
 
@@ -388,7 +400,7 @@ export function DashboardContent({
             <Card>
               <CardHeader>
                 <CardTitle>Share & Earn</CardTitle>
-                <CardDescription>Share your referral link and earn commissions when others join</CardDescription>
+                <CardDescription>Share your referral code and earn commissions when others join</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="p-4 bg-muted/50 rounded-lg">
@@ -397,17 +409,27 @@ export function DashboardContent({
                       <p className="text-sm font-medium">Your Referral Code</p>
                       <p className="text-2xl font-bold text-primary">{profile?.referral_code}</p>
                     </div>
-                    <Button onClick={copyReferralLink} className="flex items-center gap-2">
-                      <Copy className="w-4 h-4" />
-                      Copy Link
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={copyReferralCode}
+                        variant="outline"
+                        className="flex items-center gap-2 bg-transparent"
+                      >
+                        <Copy className="w-4 h-4" />
+                        Copy Code
+                      </Button>
+                      <Button onClick={copyReferralLink} className="flex items-center gap-2">
+                        <Copy className="w-4 h-4" />
+                        Copy Link
+                      </Button>
+                    </div>
                   </div>
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-4">
                   <div className="text-center p-4 border rounded-lg">
                     <Users className="w-8 h-8 text-primary mx-auto mb-2" />
-                    <p className="text-2xl font-bold">0</p>
+                    <p className="text-2xl font-bold">{directReferrals.length}</p>
                     <p className="text-sm text-muted-foreground">Direct Referrals</p>
                   </div>
                   <div className="text-center p-4 border rounded-lg">
@@ -417,10 +439,44 @@ export function DashboardContent({
                   </div>
                   <div className="text-center p-4 border rounded-lg">
                     <Wallet className="w-8 h-8 text-primary mx-auto mb-2" />
-                    <p className="text-2xl font-bold">₹0</p>
+                    <p className="text-2xl font-bold">₹{referralEarnings.toLocaleString()}</p>
                     <p className="text-sm text-muted-foreground">Referral Earnings</p>
                   </div>
                 </div>
+
+                {directReferrals.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Your Referrals</CardTitle>
+                      <CardDescription>People who joined using your referral code</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {directReferrals.map((referral, index) => (
+                          <div key={referral.id} className="flex items-center justify-between p-3 border rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="w-8 h-8">
+                                <AvatarImage
+                                  src={`https://api.dicebear.com/7.x/initials/svg?seed=${referral.full_name}`}
+                                />
+                                <AvatarFallback>{referral.full_name?.charAt(0) || "?"}</AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="text-sm font-medium">{referral.full_name || "Anonymous"}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  Joined {new Date(referral.created_at).toLocaleDateString()}
+                                </p>
+                              </div>
+                            </div>
+                            <Badge variant="outline" className="text-xs capitalize">
+                              {referral.package_type || "Basic"}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
