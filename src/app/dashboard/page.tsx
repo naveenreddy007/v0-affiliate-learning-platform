@@ -148,13 +148,20 @@ export default function DashboardPage() {
         {/* Quick Actions */}
         <div className="card">
           <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
-          <div className="grid md:grid-cols-2 gap-4">
-            <button className="btn btn-primary text-left p-4 h-auto">
+          <div className="grid md:grid-cols-3 gap-4">
+            <Link href="/courses" className="btn btn-primary text-left p-4 h-auto">
               <div>
-                <div className="font-medium">Browse Courses</div>
+                <div className="font-medium">📚 Browse Courses</div>
                 <div className="text-sm opacity-75">Explore available content</div>
               </div>
-            </button>
+            </Link>
+            
+            <Link href="/earnings" className="btn btn-secondary text-left p-4 h-auto">
+              <div>
+                <div className="font-medium">💰 View Earnings</div>
+                <div className="text-sm opacity-75">Check your commissions</div>
+              </div>
+            </Link>
             
             <button 
               onClick={() => {
@@ -165,7 +172,7 @@ export default function DashboardPage() {
               className="btn btn-secondary text-left p-4 h-auto"
             >
               <div>
-                <div className="font-medium">Share Referral Link</div>
+                <div className="font-medium">🔗 Share Referral Link</div>
                 <div className="text-sm opacity-75">Earn commissions</div>
               </div>
             </button>
